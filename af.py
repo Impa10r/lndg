@@ -110,6 +110,8 @@ def main(channels):
         balanced_df['new_rate'] = balanced_df.apply(lambda row: row['local_fee_rate'] - (1 + row['local_fee_rate'] / 100 * multiplier) if row['amt_routed_out_7day'] < 1000 else row['local_fee_rate'], axis=1)
         # IF NET FLOW POSITIVE DURING THE UPDATE HOURS THEN INCREASE FEE PROPORTIONALLY TO OUTFLOW AND INBOUND CAPACITY
         balanced_df['new_rate'] = balanced_df.apply(lambda row: row['local_fee_rate'] + (1 if row['local_fee_rate'] < 10 else 1 + (row['local_fee_rate'] - 10) / 20) * multiplier * row['net_routed_hours'] * row['in_percent'] if row['net_routed_hours'] > 0 else row['new_rate'], axis=1)
+        # APPLY MIN
+        balanced_df['new_rate'] = balanced_df.apply(lambda row: min_rate if min_rate > row['new_rate'] else row['new_rate'], axis=1)
 
         # Excess Liquidity
         excess_df = channels_df[channels_df['out_percent'] >= excess_limit].copy()
@@ -123,7 +125,7 @@ def main(channels):
         result_df = concat([lowliq_df, balanced_df, excess_df])
         result_df['new_rate'] = result_df.apply(lambda row: int(round(row['new_rate']/increment, 0)*increment), axis=1)
         result_df['new_rate'] = result_df.apply(lambda row: max_rate if max_rate < row['new_rate'] else row['new_rate'], axis=1)
-        result_df['new_rate'] = result_df.apply(lambda row: min_rate if min_rate > row['new_rate'] else row['new_rate'], axis=1)
+        result_df['new_rate'] = result_df.apply(lambda row: 0 if 0 > row['new_rate'] else row['new_rate'], axis=1)
         result_df['adjustment'] = result_df.apply(lambda row: int(row['new_rate']-row['local_fee_rate']), axis=1)
         return result_df
     else:
