@@ -100,7 +100,7 @@ def main(channels):
             failed_htlc_df = failed_htlc_df[(failed_htlc_df['wire_failure']==15) & (failed_htlc_df['failure_detail']==6) & (failed_htlc_df['amount']>failed_htlc_df['chan_out_liq']+failed_htlc_df['chan_out_pending'])]
         lowliq_df['failed_out_hours'] = 0 if failed_htlc_df.empty else lowliq_df.apply(lambda row: len(failed_htlc_df[failed_htlc_df['chan_id_out']==row.chan_id]), axis=1)
         # INCREASE IF (failed htlc >= threshhold during update hours)
-        lowliq_df['new_rate'] = lowliq_df.apply(lambda row: row['local_fee_rate'] + (5 * multiplier) if row['failed_out_hours'] >= failed_htlc_limit else row['local_fee_rate'], axis=1)
+        lowliq_df['new_rate'] = lowliq_df.apply(lambda row: row['local_fee_rate'] + (10 * multiplier) if row['failed_out_hours'] >= failed_htlc_limit else row['local_fee_rate'], axis=1)
         # IF NET FLOW POSITIVE DURING THE UPDATE HOURS THEN INCREASE FEE PROPORTIONALLY TO OUTFLOW AND INBOUND CAPACITY
         lowliq_df['new_rate'] = lowliq_df.apply(lambda row: row['local_fee_rate'] + (1 if row['local_fee_rate'] < 10 else 1 + (row['local_fee_rate'] - 10) / 20) * multiplier * row['net_routed_hours'] * row['in_percent'] if row['net_routed_hours'] > 0 else row['new_rate'], axis=1)
 
